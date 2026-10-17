@@ -629,3 +629,238 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   return true;
 }
 
+
+// ==== CUSTOM: steno word combos (hand-written, not from Oryx) ====
+// Plover-style briefs on layer 0: each chord types a word and a space.
+// steno_combo_count.c appends these after Oryx's key_combos[], so combos can
+// still be made in Oryx. Don't give an Oryx combo the same keys as one below.
+
+// Layer-0 keys used by the chords, named after the steno key they stand in for.
+// Oryx can renumber DUAL_FUNC_* and ST_MACRO_* when the layout changes, so
+// re-check these after Oryx edits.
+#include "keymap_introspection.h" // combo_count_raw()
+#define WK_Z    MT(MOD_LSFT, KC_Z) // S-
+#define WK_R    MT(MOD_LALT, KC_R) // T-
+#define WK_S    MT(MOD_LCTL, KC_S) // P-
+#define WK_T    MT(MOD_LSFT, KC_T) // H-
+#define WK_N    MT(MOD_RSFT, KC_N) // -F
+#define WK_E    MT(MOD_RCTL, KC_E) // -P
+#define WK_I    MT(MOD_RALT, KC_I) // -L
+#define WK_O    MT(MOD_RGUI, KC_O) // -T
+#define WK_ESC  LT(2, KC_ESCAPE)   // A
+#define WK_SPC  LT(3, KC_SPACE)    // O
+#define WK_BSPC LT(6, KC_BSPC)     // E
+#define WK_U    DUAL_FUNC_9        // U: right thumb, tap Ctrl+Bksp / hold layer 7
+#define WK_COMM DUAL_FUNC_6        // -B: , key
+#define WK_SLSH DUAL_FUNC_8        // -S: / key
+#define WK_ZR   ST_MACRO_0         // -Z: ../ key
+// K- = KC_X, W- = KC_C, R- = KC_D, -R = KC_H, -D = KC_SCLN
+
+#define WORD_COMBO_TERM       35 // ms, chords on letter keys only
+#define WORD_COMBO_TERM_THUMB 30 // ms, chords that include Space or Backspace
+
+enum word_combo {
+    WC_AND,
+    WC_FROM,
+    WC_THERE,
+    WC_HAVE,
+    WC_WILL,
+    WC_WERE,
+    WC_JUST,
+    WC_FOR,
+    WC_HAD,
+    WC_BEEN,
+    WC_BEFORE,
+    WC_THIS,
+    WC_ABOUT,
+    WC_THAT,
+    WC_WHAT,
+    WC_WAS,
+    WC_THEY,
+    WC_SHE,
+    WC_THEN,
+    WC_THEM,
+    WC_THAN,
+    WC_WOULD,
+    WC_COULD,
+    WC_SHOULD,
+    WC_NOT,
+    WC_KNOW,
+    WC_SOME,
+    WC_OUT,
+    WC_ALL,
+    WC_WHICH,
+    WC_ONE,
+    WC_BUT,
+    WC_BECAUSE,
+    WC_SAID,
+};
+
+const uint16_t PROGMEM wc_and[]     = { WK_Z, KC_X, WK_S, COMBO_END };                        // SKP
+const uint16_t PROGMEM wc_from[]    = { WK_R, WK_S, KC_D, COMBO_END };                        // TPR
+const uint16_t PROGMEM wc_there[]   = { WK_R, WK_T, KC_D, COMBO_END };                        // THR
+const uint16_t PROGMEM wc_have[]    = { WK_Z, KC_D, COMBO_END };                              // SR
+const uint16_t PROGMEM wc_will[]    = { WK_T, KC_D, COMBO_END };                              // HR
+const uint16_t PROGMEM wc_were[]    = { KC_C, KC_D, KC_H, COMBO_END };                        // WER
+const uint16_t PROGMEM wc_just[]    = { WK_Z, KC_X, KC_C, KC_D, COMBO_END };                  // SKWR
+const uint16_t PROGMEM wc_for[]     = { WK_R, WK_S, KC_H, COMBO_END };                        // TP-R
+const uint16_t PROGMEM wc_had[]     = { WK_T, KC_SCLN, COMBO_END };                           // H-D
+const uint16_t PROGMEM wc_been[]    = { WK_S, KC_C, WK_E, WK_COMM, COMBO_END };               // PW-PB
+const uint16_t PROGMEM wc_before[]  = { WK_S, KC_C, WK_N, KC_H, COMBO_END };                  // PW-FR
+const uint16_t PROGMEM wc_this[]    = { WK_R, WK_T, WK_BSPC, WK_U, WK_SLSH, COMBO_END };      // THEUS
+const uint16_t PROGMEM wc_about[]   = { WK_S, KC_C, WK_SPC, WK_U, WK_O, COMBO_END };          // PWOUT
+const uint16_t PROGMEM wc_that[]    = { WK_R, WK_T, WK_ESC, COMBO_END };                      // THA
+const uint16_t PROGMEM wc_what[]    = { KC_C, WK_T, WK_ESC, COMBO_END };                      // WHA
+const uint16_t PROGMEM wc_was[]     = { KC_C, WK_ESC, WK_SLSH, COMBO_END };                   // WAS
+const uint16_t PROGMEM wc_they[]    = { WK_R, WK_T, WK_ESC, WK_BSPC, WK_U, COMBO_END };       // THAEU
+const uint16_t PROGMEM wc_she[]     = { WK_Z, WK_T, WK_BSPC, COMBO_END };                     // SHE
+const uint16_t PROGMEM wc_then[]    = { WK_R, WK_T, WK_BSPC, WK_E, WK_COMM, COMBO_END };      // THEPB
+const uint16_t PROGMEM wc_them[]    = { WK_R, WK_T, WK_BSPC, WK_E, WK_I, COMBO_END };         // THEPL
+const uint16_t PROGMEM wc_than[]    = { WK_R, WK_T, WK_ESC, WK_E, WK_COMM, COMBO_END };       // THAPB
+const uint16_t PROGMEM wc_would[]   = { KC_C, WK_SPC, WK_U, WK_I, KC_SCLN, COMBO_END };       // WOULD
+const uint16_t PROGMEM wc_could[]   = { KC_X, WK_SPC, WK_U, WK_I, KC_SCLN, COMBO_END };       // KOULD
+const uint16_t PROGMEM wc_should[]  = { WK_Z, WK_T, WK_SPC, WK_U, WK_I, KC_SCLN, COMBO_END }; // SHOULD
+const uint16_t PROGMEM wc_not[]     = { WK_R, WK_S, WK_T, WK_SPC, WK_O, COMBO_END };          // TPHOT
+const uint16_t PROGMEM wc_know[]    = { WK_R, WK_S, WK_T, WK_SPC, WK_BSPC, COMBO_END };       // TPHOE
+const uint16_t PROGMEM wc_some[]    = { WK_Z, WK_SPC, WK_E, WK_I, COMBO_END };                // SOPL
+const uint16_t PROGMEM wc_out[]     = { WK_SPC, WK_U, WK_O, COMBO_END };                      // OUT
+const uint16_t PROGMEM wc_all[]     = { WK_ESC, WK_U, WK_I, COMBO_END };                      // AUL
+const uint16_t PROGMEM wc_which[]   = { KC_C, WK_BSPC, WK_U, COMBO_END };                     // WEU
+const uint16_t PROGMEM wc_one[]     = { KC_C, WK_U, WK_E, WK_COMM, COMBO_END };               // WUPB
+const uint16_t PROGMEM wc_but[]     = { WK_S, KC_C, WK_U, WK_O, COMBO_END };                  // PWUT
+const uint16_t PROGMEM wc_because[] = { WK_S, KC_C, WK_ESC, WK_U, WK_ZR, COMBO_END };         // PWAUZ
+const uint16_t PROGMEM wc_said[]    = { WK_Z, WK_ESC, WK_BSPC, WK_U, KC_SCLN, COMBO_END };    // SAEUD
+
+#ifndef COMBO_COUNT
+// No Oryx combos left, so these become the only key_combos[].
+#    define word_combos key_combos
+#endif
+
+combo_t word_combos[] = {
+    [WC_AND]     = COMBO_ACTION(wc_and),
+    [WC_FROM]    = COMBO_ACTION(wc_from),
+    [WC_THERE]   = COMBO_ACTION(wc_there),
+    [WC_HAVE]    = COMBO_ACTION(wc_have),
+    [WC_WILL]    = COMBO_ACTION(wc_will),
+    [WC_WERE]    = COMBO_ACTION(wc_were),
+    [WC_JUST]    = COMBO_ACTION(wc_just),
+    [WC_FOR]     = COMBO_ACTION(wc_for),
+    [WC_HAD]     = COMBO_ACTION(wc_had),
+    [WC_BEEN]    = COMBO_ACTION(wc_been),
+    [WC_BEFORE]  = COMBO_ACTION(wc_before),
+    [WC_THIS]    = COMBO_ACTION(wc_this),
+    [WC_ABOUT]   = COMBO_ACTION(wc_about),
+    [WC_THAT]    = COMBO_ACTION(wc_that),
+    [WC_WHAT]    = COMBO_ACTION(wc_what),
+    [WC_WAS]     = COMBO_ACTION(wc_was),
+    [WC_THEY]    = COMBO_ACTION(wc_they),
+    [WC_SHE]     = COMBO_ACTION(wc_she),
+    [WC_THEN]    = COMBO_ACTION(wc_then),
+    [WC_THEM]    = COMBO_ACTION(wc_them),
+    [WC_THAN]    = COMBO_ACTION(wc_than),
+    [WC_WOULD]   = COMBO_ACTION(wc_would),
+    [WC_COULD]   = COMBO_ACTION(wc_could),
+    [WC_SHOULD]  = COMBO_ACTION(wc_should),
+    [WC_NOT]     = COMBO_ACTION(wc_not),
+    [WC_KNOW]    = COMBO_ACTION(wc_know),
+    [WC_SOME]    = COMBO_ACTION(wc_some),
+    [WC_OUT]     = COMBO_ACTION(wc_out),
+    [WC_ALL]     = COMBO_ACTION(wc_all),
+    [WC_WHICH]   = COMBO_ACTION(wc_which),
+    [WC_ONE]     = COMBO_ACTION(wc_one),
+    [WC_BUT]     = COMBO_ACTION(wc_but),
+    [WC_BECAUSE] = COMBO_ACTION(wc_because),
+    [WC_SAID]    = COMBO_ACTION(wc_said),
+};
+const uint16_t word_combo_count = ARRAY_SIZE(word_combos);
+
+static const char *const word_combo_text[] = {
+    [WC_AND]     = "and ",
+    [WC_FROM]    = "from ",
+    [WC_THERE]   = "there ",
+    [WC_HAVE]    = "have ",
+    [WC_WILL]    = "will ",
+    [WC_WERE]    = "were ",
+    [WC_JUST]    = "just ",
+    [WC_FOR]     = "for ",
+    [WC_HAD]     = "had ",
+    [WC_BEEN]    = "been ",
+    [WC_BEFORE]  = "before ",
+    [WC_THIS]    = "this ",
+    [WC_ABOUT]   = "about ",
+    [WC_THAT]    = "that ",
+    [WC_WHAT]    = "what ",
+    [WC_WAS]     = "was ",
+    [WC_THEY]    = "they ",
+    [WC_SHE]     = "she ",
+    [WC_THEN]    = "then ",
+    [WC_THEM]    = "them ",
+    [WC_THAN]    = "than ",
+    [WC_WOULD]   = "would ",
+    [WC_COULD]   = "could ",
+    [WC_SHOULD]  = "should ",
+    [WC_NOT]     = "not ",
+    [WC_KNOW]    = "know ",
+    [WC_SOME]    = "some ",
+    [WC_OUT]     = "out ",
+    [WC_ALL]     = "all ",
+    [WC_WHICH]   = "which ",
+    [WC_ONE]     = "one ",
+    [WC_BUT]     = "but ",
+    [WC_BECAUSE] = "because ",
+    [WC_SAID]    = "said ",
+};
+_Static_assert(ARRAY_SIZE(word_combo_text) == ARRAY_SIZE(word_combos), "every word combo needs a word");
+
+// Index of the first word combo in QMK's combined combo list.
+static uint16_t word_combo_base(void) {
+#ifdef COMBO_COUNT
+    return combo_count_raw();
+#else
+    return 0;
+#endif
+}
+
+void process_combo_event(uint16_t combo_index, bool pressed) {
+    uint16_t base = word_combo_base();
+    if (!pressed || combo_index < base || combo_index - base >= word_combo_count) {
+        return;
+    }
+    const char *word = word_combo_text[combo_index - base];
+
+    // With Shift (one-shot or held), capitalize only the first letter: "And ".
+    uint8_t held_shift = get_mods() & MOD_MASK_SHIFT;
+    if (held_shift || (get_oneshot_mods() & MOD_MASK_SHIFT)) {
+        clear_oneshot_mods();
+        unregister_mods(held_shift);
+        send_char(word[0] - 'a' + 'A');
+        send_string(word + 1);
+        register_mods(held_shift);
+    } else {
+        send_string(word);
+    }
+}
+
+bool combo_should_trigger(uint16_t combo_index, combo_t *combo, uint16_t keycode, keyrecord_t *record) {
+    if (combo_index < word_combo_base()) {
+        return true; // Oryx combos: unchanged
+    }
+    // Word combos only on the Colemak base layer, never on Gaming, Chat, Steno, etc.
+    return get_highest_layer(layer_state | default_layer_state) == 0;
+}
+
+uint16_t get_combo_term(uint16_t combo_index, combo_t *combo) {
+    if (combo_index < word_combo_base()) {
+        return COMBO_TERM; // Oryx combos: unchanged
+    }
+    for (const uint16_t *key = combo->keys;; key++) {
+        uint16_t keycode = pgm_read_word(key);
+        if (keycode == COMBO_END) {
+            break;
+        }
+        if (keycode == WK_SPC || keycode == WK_BSPC) {
+            return WORD_COMBO_TERM_THUMB;
+        }
+    }
+    return WORD_COMBO_TERM;
+}

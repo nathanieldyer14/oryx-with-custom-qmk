@@ -46,3 +46,8 @@
 #undef ENABLE_RGB_MATRIX_MULTISPLASH
 #undef ENABLE_RGB_MATRIX_SOLID_SPLASH
 #undef ENABLE_RGB_MATRIX_SOLID_MULTISPLASH
+
+// ==== CUSTOM: steno word combos (hand-written, not from Oryx) ====
+// Per-combo timeouts and layer checks for the word combos in keymap.c.
+#define COMBO_TERM_PER_COMBO
+#define COMBO_SHOULD_TRIGGER
