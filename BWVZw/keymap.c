@@ -652,6 +652,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 #define WK_BSPC LT(6, KC_BSPC)     // E
 #define WK_U    DUAL_FUNC_9        // U: right thumb, tap Ctrl+Bksp / hold layer 7
 #define WK_COMM DUAL_FUNC_6        // -B: , key
+#define WK_DOT  DUAL_FUNC_7        // -G: . key
 #define WK_SLSH DUAL_FUNC_8        // -S: / key
 #define WK_ZR   ST_MACRO_0         // -Z: ../ key
 // K- = KC_X, W- = KC_C, R- = KC_D, -R = KC_H, -D = KC_SCLN
@@ -659,6 +660,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 #define WORD_COMBO_TERM       35 // ms, chords on letter keys only
 #define WORD_COMBO_TERM_THUMB 30 // ms, chords that include Space or Backspace
 #define WORD_COMBO_TERM_SHORT 20 // ms, WO/KO: guards against "c " / "x " rolls at word ends
+#define WORD_COMBO_TERM_LONG  60 // ms, chords of WORD_COMBO_LONG_KEYS or more keys
+#define WORD_COMBO_LONG_KEYS  6
 
 enum word_combo {
     WC_AND,
@@ -695,6 +698,17 @@ enum word_combo {
     WC_BUT,
     WC_BECAUSE,
     WC_SAID,
+    // Words from the layer 11 macros (gates stands in for gaskets)
+    WC_QUICK,
+    WC_WEARILY,
+    WC_FURIOUSLY,
+    WC_PENSIVE,
+    WC_BEAUTIFUL,
+    WC_APT,
+    WC_RECENTLY,
+    WC_SPONGES,
+    WC_TEAPOTS,
+    WC_GATES,
 };
 
 const uint16_t PROGMEM wc_and[]     = { WK_Z, KC_X, WK_S, COMBO_END };                        // SKP
@@ -731,6 +745,18 @@ const uint16_t PROGMEM wc_one[]     = { KC_C, WK_U, WK_E, WK_COMM, COMBO_END }; 
 const uint16_t PROGMEM wc_but[]     = { WK_S, KC_C, WK_U, WK_O, COMBO_END };                  // PWUT
 const uint16_t PROGMEM wc_because[] = { WK_S, KC_C, WK_ESC, WK_U, WK_ZR, COMBO_END };         // PWAUZ
 const uint16_t PROGMEM wc_said[]    = { WK_Z, WK_ESC, WK_BSPC, WK_U, KC_SCLN, COMBO_END };    // SAEUD
+// Layer 11 macro words. wearily, pensive and teapots are two-stroke in Plover,
+// so their strokes are merged into one chord (none is a Plover stroke itself).
+const uint16_t PROGMEM wc_quick[]     = { KC_X, KC_C, WK_BSPC, WK_U, WK_COMM, WK_DOT, COMBO_END };                 // KWEUBG
+const uint16_t PROGMEM wc_wearily[]   = { KC_C, WK_T, KC_D, WK_ESC, WK_SPC, WK_BSPC, WK_U, KC_H, COMBO_END };      // WHRAOEUR (WAOER/HREU)
+const uint16_t PROGMEM wc_furiously[] = { WK_R, WK_S, WK_ESC, WK_SPC, WK_U, KC_H, WK_I, WK_SLSH, COMBO_END };      // TPAOURLS
+const uint16_t PROGMEM wc_pensive[]   = { WK_Z, WK_S, WK_BSPC, WK_U, WK_N, WK_E, WK_COMM, COMBO_END };             // SPEUFPB (PEPB/SEUF)
+const uint16_t PROGMEM wc_beautiful[] = { WK_S, KC_C, WK_ESC, WK_SPC, WK_U, WK_N, WK_I, COMBO_END };               // PWAOUFL
+const uint16_t PROGMEM wc_apt[]       = { WK_ESC, WK_E, WK_O, COMBO_END };                                         // APT
+const uint16_t PROGMEM wc_recently[]  = { KC_D, WK_ESC, WK_SPC, WK_BSPC, WK_E, WK_COMM, WK_I, WK_O, COMBO_END };   // RAOEPBLT
+const uint16_t PROGMEM wc_sponges[]   = { WK_Z, WK_S, WK_SPC, WK_E, WK_COMM, WK_DOT, WK_SLSH, COMBO_END };         // SPOPBGS
+const uint16_t PROGMEM wc_teapots[]   = { WK_R, WK_S, WK_ESC, WK_SPC, WK_BSPC, WK_O, WK_SLSH, COMBO_END };         // TPAOETS (TAE/POTS)
+const uint16_t PROGMEM wc_gates[]     = { WK_R, KC_X, WK_S, KC_C, WK_ESC, WK_BSPC, WK_O, WK_SLSH, COMBO_END };     // TKPWAETS
 
 #ifndef COMBO_COUNT
 // No Oryx combos left, so these become the only key_combos[].
@@ -772,6 +798,16 @@ combo_t word_combos[] = {
     [WC_BUT]     = COMBO_ACTION(wc_but),
     [WC_BECAUSE] = COMBO_ACTION(wc_because),
     [WC_SAID]    = COMBO_ACTION(wc_said),
+    [WC_QUICK]     = COMBO_ACTION(wc_quick),
+    [WC_WEARILY]   = COMBO_ACTION(wc_wearily),
+    [WC_FURIOUSLY] = COMBO_ACTION(wc_furiously),
+    [WC_PENSIVE]   = COMBO_ACTION(wc_pensive),
+    [WC_BEAUTIFUL] = COMBO_ACTION(wc_beautiful),
+    [WC_APT]       = COMBO_ACTION(wc_apt),
+    [WC_RECENTLY]  = COMBO_ACTION(wc_recently),
+    [WC_SPONGES]   = COMBO_ACTION(wc_sponges),
+    [WC_TEAPOTS]   = COMBO_ACTION(wc_teapots),
+    [WC_GATES]     = COMBO_ACTION(wc_gates),
 };
 const uint16_t word_combo_count = ARRAY_SIZE(word_combos);
 
@@ -810,6 +846,16 @@ static const char *const word_combo_text[] = {
     [WC_BUT]     = "but ",
     [WC_BECAUSE] = "because ",
     [WC_SAID]    = "said ",
+    [WC_QUICK]     = "quick ",
+    [WC_WEARILY]   = "wearily ",
+    [WC_FURIOUSLY] = "furiously ",
+    [WC_PENSIVE]   = "pensive ",
+    [WC_BEAUTIFUL] = "beautiful ",
+    [WC_APT]       = "apt ",
+    [WC_RECENTLY]  = "recently ",
+    [WC_SPONGES]   = "sponges ",
+    [WC_TEAPOTS]   = "teapots ",
+    [WC_GATES]     = "gates ",
 };
 _Static_assert(ARRAY_SIZE(word_combo_text) == ARRAY_SIZE(word_combos), "every word combo needs a word");
 
@@ -858,16 +904,22 @@ uint16_t get_combo_term(uint16_t combo_index, combo_t *combo) {
     if (word == WC_WOULD || word == WC_COULD) {
         return WORD_COMBO_TERM_SHORT;
     }
+    uint8_t key_count = 0;
+    bool    has_thumb = false;
     for (const uint16_t *key = combo->keys;; key++) {
         uint16_t keycode = pgm_read_word(key);
         if (keycode == COMBO_END) {
             break;
         }
+        key_count++;
         if (keycode == WK_SPC || keycode == WK_BSPC) {
-            return WORD_COMBO_TERM_THUMB;
+            has_thumb = true;
         }
     }
-    return WORD_COMBO_TERM;
+    if (key_count >= WORD_COMBO_LONG_KEYS) {
+        return WORD_COMBO_TERM_LONG;
+    }
+    return has_thumb ? WORD_COMBO_TERM_THUMB : WORD_COMBO_TERM;
 }
 
 // Word combos fire on release, like Plover. Holding a chord past COMBO_HOLD_TERM,
