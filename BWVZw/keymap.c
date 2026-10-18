@@ -658,6 +658,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 #define WORD_COMBO_TERM       35 // ms, chords on letter keys only
 #define WORD_COMBO_TERM_THUMB 30 // ms, chords that include Space or Backspace
+#define WORD_COMBO_TERM_SHORT 20 // ms, WO/KO: guards against "c " / "x " rolls at word ends
 
 enum word_combo {
     WC_AND,
@@ -712,14 +713,14 @@ const uint16_t PROGMEM wc_about[]   = { WK_S, KC_C, WK_SPC, WK_U, WK_O, COMBO_EN
 const uint16_t PROGMEM wc_that[]    = { WK_R, WK_T, WK_ESC, COMBO_END };                      // THA
 const uint16_t PROGMEM wc_what[]    = { KC_C, WK_T, WK_ESC, COMBO_END };                      // WHA
 const uint16_t PROGMEM wc_was[]     = { KC_C, WK_ESC, WK_SLSH, COMBO_END };                   // WAS
-const uint16_t PROGMEM wc_they[]    = { WK_R, WK_T, WK_ESC, WK_BSPC, WK_U, COMBO_END };       // THAEU
+const uint16_t PROGMEM wc_they[]    = { WK_R, WK_T, WK_BSPC, COMBO_END };                     // THE
 const uint16_t PROGMEM wc_she[]     = { WK_Z, WK_T, WK_BSPC, COMBO_END };                     // SHE
 const uint16_t PROGMEM wc_then[]    = { WK_R, WK_T, WK_BSPC, WK_E, WK_COMM, COMBO_END };      // THEPB
 const uint16_t PROGMEM wc_them[]    = { WK_R, WK_T, WK_BSPC, WK_E, WK_I, COMBO_END };         // THEPL
 const uint16_t PROGMEM wc_than[]    = { WK_R, WK_T, WK_ESC, WK_E, WK_COMM, COMBO_END };       // THAPB
-const uint16_t PROGMEM wc_would[]   = { KC_C, WK_SPC, WK_U, WK_I, KC_SCLN, COMBO_END };       // WOULD
-const uint16_t PROGMEM wc_could[]   = { KC_X, WK_SPC, WK_U, WK_I, KC_SCLN, COMBO_END };       // KOULD
-const uint16_t PROGMEM wc_should[]  = { WK_Z, WK_T, WK_SPC, WK_U, WK_I, KC_SCLN, COMBO_END }; // SHOULD
+const uint16_t PROGMEM wc_would[]   = { KC_C, WK_SPC, COMBO_END };                            // WO
+const uint16_t PROGMEM wc_could[]   = { KC_X, WK_SPC, COMBO_END };                            // KO
+const uint16_t PROGMEM wc_should[]  = { WK_Z, WK_T, WK_SPC, COMBO_END };                      // SHO
 const uint16_t PROGMEM wc_not[]     = { WK_R, WK_S, WK_T, WK_SPC, WK_O, COMBO_END };          // TPHOT
 const uint16_t PROGMEM wc_know[]    = { WK_R, WK_S, WK_T, WK_SPC, WK_BSPC, COMBO_END };       // TPHOE
 const uint16_t PROGMEM wc_some[]    = { WK_Z, WK_SPC, WK_E, WK_I, COMBO_END };                // SOPL
@@ -853,6 +854,10 @@ uint16_t get_combo_term(uint16_t combo_index, combo_t *combo) {
     if (combo_index < word_combo_base()) {
         return COMBO_TERM; // Oryx combos: unchanged
     }
+    uint16_t word = combo_index - word_combo_base();
+    if (word == WC_WOULD || word == WC_COULD) {
+        return WORD_COMBO_TERM_SHORT;
+    }
     for (const uint16_t *key = combo->keys;; key++) {
         uint16_t keycode = pgm_read_word(key);
         if (keycode == COMBO_END) {
@@ -863,4 +868,11 @@ uint16_t get_combo_term(uint16_t combo_index, combo_t *combo) {
         }
     }
     return WORD_COMBO_TERM;
+}
+
+// Word combos fire on release, like Plover. Holding a chord past COMBO_HOLD_TERM,
+// or pressing a key outside it, cancels the word so the keys act as their
+// mods/layers instead (e.g. S+T+Space held, then arrows).
+bool get_combo_must_tap(uint16_t combo_index, combo_t *combo) {
+    return combo_index >= word_combo_base();
 }
