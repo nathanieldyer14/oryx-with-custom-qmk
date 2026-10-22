@@ -888,12 +888,56 @@ void process_combo_event(uint16_t combo_index, bool pressed) {
     }
 }
 
+// Recent key presses, newest first. pre_process_record_user runs before QMK's
+// combo code, so this sees keys that combos would otherwise swallow.
+#define WORD_PRESS_HISTORY 10
+static uint16_t recent_presses[WORD_PRESS_HISTORY];
+
+bool pre_process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (record->event.pressed) {
+        for (uint8_t i = WORD_PRESS_HISTORY - 1; i > 0; i--) {
+            recent_presses[i] = recent_presses[i - 1];
+        }
+        recent_presses[0] = keycode;
+    }
+    return true;
+}
+
+// False when a key outside this chord was pressed after one of the chord's
+// keys that is already down, e.g. "cd " typed fast must not become "d" + "would ".
+// QMK alone allows it because D belongs to another combo (Oryx's "cd").
+static bool chord_is_uninterrupted(const combo_t *combo) {
+    uint32_t seen = 0;
+    for (uint8_t i = 0; i < WORD_PRESS_HISTORY; i++) {
+        int8_t key_index = -1;
+        for (uint8_t k = 0;; k++) {
+            uint16_t key = pgm_read_word(&combo->keys[k]);
+            if (key == COMBO_END) {
+                break;
+            }
+            if (key == recent_presses[i]) {
+                key_index = k;
+                break;
+            }
+        }
+        if (key_index < 0) {
+            break; // first press that isn't part of the chord
+        }
+        seen |= (uint32_t)1 << key_index;
+    }
+    // combo->state holds the chord keys already down, not counting this press.
+    return (combo->state & ~seen) == 0;
+}
+
 bool combo_should_trigger(uint16_t combo_index, combo_t *combo, uint16_t keycode, keyrecord_t *record) {
     if (combo_index < word_combo_base()) {
         return true; // Oryx combos: unchanged
     }
     // Word combos only on the Colemak base layer, never on Gaming, Chat, Steno, etc.
-    return get_highest_layer(layer_state | default_layer_state) == 0;
+    if (get_highest_layer(layer_state | default_layer_state) != 0) {
+        return false;
+    }
+    return chord_is_uninterrupted(combo);
 }
 
 uint16_t get_combo_term(uint16_t combo_index, combo_t *combo) {
